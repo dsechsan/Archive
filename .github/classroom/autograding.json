@@ -61,16 +61,6 @@
       "points": 15
     },
     {
-      "name": "Extract documents test -- 15pts",
-      "setup": "",
-      "run": "./Builds/archive Extract /tmp",
-      "input": "",
-      "output": "Extract test PASS",
-      "comparison": "included",
-      "timeout": 2,
-      "points": 15
-    },
-    {
       "name": "Remove documents test -- 15pts",
       "setup": "",
       "run": "./Builds/archive Remove /tmp",
@@ -101,14 +91,34 @@
       "points": 10
     },
     {
-      "name": "Stress Test -- 10pts",
+      "name": "Stress Test NEW",
       "setup": "",
       "run": "./Builds/archive Stress /tmp",
       "input": "",
       "output": "Stress test PASS",
       "comparison": "included",
       "timeout": 2,
-      "points": 10
+      "points": 20
+    },
+    {
+      "name": "Extract documents test -- NEW",
+      "setup": "",
+      "run": "./Builds/archive Extract /tmp",
+      "input": "",
+      "output": "Extract test PASS",
+      "comparison": "included",
+      "timeout": 2,
+      "points": 30
+    },
+    {
+      "name": "Compress Test NEW",
+      "setup": "",
+      "run": "./Builds/archive Compress /tmp",
+      "input": "",
+      "output": "Compress test PASS",
+      "comparison": "included",
+      "timeout": 10,
+      "points": 65
     }
   ]
 }
