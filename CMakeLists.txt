@@ -12,4 +12,6 @@ add_executable(archive
         Testable.hpp
         Testing.hpp
         Timer.hpp
-        Tracker.hpp)
+        Tracker.hpp
+        ChunkManager.h
+        )

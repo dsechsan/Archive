@@ -8,6 +8,7 @@
 #ifndef Archive_hpp
 #define Archive_hpp
 
+
 #include <cstdio>
 #include <iostream>
 #include <string>
@@ -16,6 +17,8 @@
 #include <memory>
 #include <optional>
 #include <stdexcept>
+#include "ChunkManager.h"
+
 
 namespace ECE141 {
 
@@ -84,22 +87,26 @@ namespace ECE141 {
     //You'll need to define your own classes for Blocks, and other useful types...
     //--------------------------------------------------------------------------------
 
+
     class Archive {
     protected:
         std::vector<std::shared_ptr<IDataProcessor>> processors;
         std::vector<std::shared_ptr<ArchiveObserver>> observers;
-        Archive(const std::string &aFullPath, AccessMode aMode);  //protected on purpose
+        Archive(std::string aFullPath, AccessMode aMode);  //protected on purpose
+        std::string archiveFilePath;
+        AccessMode accessMode;
+
 
     public:
 
-        ~Archive();  //
+        ~Archive() = default;  //
 
         static    ArchiveStatus<std::shared_ptr<Archive>> createArchive(const std::string &anArchiveName);
         static    ArchiveStatus<std::shared_ptr<Archive>> openArchive(const std::string &anArchiveName);
 
-        Archive&  addObserver(std::shared_ptr<ArchiveObserver> anObserver);
+        Archive&  addObserver(std::shared_ptr<ArchiveObserver>& anObserver);
 
-        ArchiveStatus<bool>      add(const std::string &aFilename);
+        ArchiveStatus<bool>      add(const std::string &aFullPath);
         ArchiveStatus<bool>      extract(const std::string &aFilename, const std::string &aFullPath);
         ArchiveStatus<bool>      remove(const std::string &aFilename);
 
@@ -110,8 +117,11 @@ namespace ECE141 {
         ArchiveStatus<std::string> getFullPath() const; //get archive path (including .arc extension)
 
 
-
         //STUDENT: add anything else you want here, (e.g. blocks?)...
+
+        static std::string getFileName(const std::string &aFullPath );
+
+        std::unique_ptr<ChunkManager> chunkManager;
 
     };
 

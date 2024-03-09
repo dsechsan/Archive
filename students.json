@@ -1,14 +1,14 @@
 {
   "course": "ECE141a",
-  "assignment"         : 5,
-  "due_date"           : "Mar 16, 2023, 11:30p",
+  "assignment"         : 4,
+  "due_date"           : "Mar 4, 2024, 11:30p",
   "total_effort_hours" : 0,
   "students": [
     {
-      "name " : "Your Name",
-      "pid"   : "Your StudentId",
-      "email" : "Your Email",
-      "os"    : "windows|mac|linux"
+      "name " : "Sandeep Chintada",
+      "pid"   : "A59015527",
+      "email" : "dchintada@ucsd.edu",
+      "os"    : "mac"
     }
   ]
 }

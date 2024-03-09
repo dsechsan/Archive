@@ -602,6 +602,7 @@ namespace ECE141 {
                 case ActionType::removed: std::cerr << "remove "; break;
                 case ActionType::listed: std::cerr << "list "; break;
                 case ActionType::dumped: std::cerr << "dump "; break;
+                case ActionType::compacted: std::cerr << "compact "; break;
             }
             std::cerr << aName << "\n";
         }
