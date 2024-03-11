@@ -26,11 +26,10 @@ namespace ECE141 {
         std::cout << "File: " << aName << ", Status: " << (status ? "Success" : "Failure") << "\n";
     }
 
-    Archive::Archive(std::string aFullPath, ECE141::AccessMode aMode) : archiveFilePath(std::move(aFullPath)),accessMode(aMode) {};
+    Archive::Archive(std::string aFullPath, ECE141::AccessMode aMode) : archiveFilePath(aFullPath),accessMode(aMode) {};
 
     std::string Archive::getFileName(const std::string &aFullPath) {
         size_t thePos = aFullPath.find_last_of('/');
-
         if (thePos == std::string::npos) {
             return aFullPath;
         } else {
