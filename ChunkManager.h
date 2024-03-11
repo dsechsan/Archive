@@ -334,7 +334,7 @@ public:
 
 private:
     std::vector<Chunk> theChunks;
-    size_t numberOfChunks;
+    size_t numberOfChunks = 0;
     std::string archiveFileName;
     std::fstream archiveFileStream;
     std::string inputFile; // for the add operation

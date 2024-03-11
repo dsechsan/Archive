@@ -93,7 +93,6 @@ namespace ECE141 {
          * 3. write data to chunks
          */
         auto theFileName = getFileName(aFullPath);
-        int findIndex = 0;
         if(chunkManager->find(theFileName)){
             std::cerr << "File already exists in the archive\n";
             return ArchiveStatus<bool>(ArchiveErrors::fileExists);
@@ -106,7 +105,6 @@ namespace ECE141 {
             chunkManager->setInputFileName(aFullPath);
 //            chunkManager->writeDataToChunks(theFileName);
             chunkManager->writeChunksToArchive(theFileName);
-
             theFileStream.close();
             return ArchiveStatus<bool>(true);
         }
