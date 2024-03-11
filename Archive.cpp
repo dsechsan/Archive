@@ -74,7 +74,6 @@ namespace ECE141 {
 
         theArchivePtr->chunkManager = std::make_shared<ChunkManager>(theArchiveName);
         theArchivePtr->chunkManager->getArchiveChunkCount();
-        theFileStream.close();
 
         return ArchiveStatus<std::shared_ptr<Archive>>(theArchivePtr);
     }
@@ -104,7 +103,6 @@ namespace ECE141 {
 //            chunkManager->writeDataToChunks(theFileName);
             chunkManager->writeChunksToArchive(theFileName);
 
-            theFileStream.close();
             return ArchiveStatus<bool>(true);
         }
     }
