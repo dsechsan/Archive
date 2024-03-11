@@ -62,6 +62,7 @@ public:
     void addChunks(size_t numChunksToAdd){
         for(int i = 0; i<numChunksToAdd; i++){
             Chunk theChunk;
+            std::memset(&theChunk,0,sizeof(theChunk));
             archiveFileStream.seekp(0,std::ios::end);
             archiveFileStream.write(reinterpret_cast<char*>(&theChunk),sizeof(theChunk));
             numberOfChunks++;
@@ -195,6 +196,7 @@ public:
             archiveFileStream.seekp(kChunkSize*theFreeIdx[i],std::ios::beg);
 
             Chunk theChunk;
+            std::memset(&theChunk,0,sizeof(theChunk));
             theDataSize = (theStreamPos + kAvailableSize > theFileSize) ? theFileSize - theStreamPos : kAvailableSize;
             theInputStream.seekg(static_cast<int>(theStreamPos), std::ios::beg);
             theInputStream.read(theChunk.data, static_cast<long>(theDataSize));
