@@ -63,7 +63,7 @@
     {
       "name": "Remove documents test -- 15pts",
       "setup": "",
-      "run": ".cmake -B Builds; make -C Builds;/Builds/archive Remove /tmp",
+      "run": "cmake -B Builds; make -C Builds;/Builds/archive Remove /tmp",
       "input": "",
       "output": "Remove test PASS",
       "comparison": "included",
@@ -73,7 +73,7 @@
     {
       "name": "List documents test -- 10pts",
       "setup": "",
-      "run": ".cmake -B Builds; make -C Builds;/Builds/archive List /tmp",
+      "run": "cmake -B Builds; make -C Builds;/Builds/archive List /tmp",
       "input": "",
       "output": "List test PASS",
       "comparison": "included",
@@ -83,7 +83,7 @@
     {
       "name": "Dump blocks test -- 10pts",
       "setup": "",
-      "run": ".cmake -B Builds; make -C Builds;/Builds/archive Dump /tmp",
+      "run": "cmake -B Builds; make -C Builds;/Builds/archive Dump /tmp",
       "input": "",
       "output": "Dump test PASS",
       "comparison": "included",
@@ -93,7 +93,7 @@
     {
       "name": "Stress Test NEW",
       "setup": "",
-      "run": ".cmake -B Builds; make -C Builds;/Builds/archive Stress /tmp",
+      "run": "cmake -B Builds; make -C Builds;/Builds/archive Stress /tmp",
       "input": "",
       "output": "Stress test PASS",
       "comparison": "included",
@@ -103,7 +103,7 @@
     {
       "name": "Extract documents test -- NEW",
       "setup": "",
-      "run": ".cmake -B Builds; make -C Builds;/Builds/archive Extract /tmp",
+      "run": "cmake -B Builds; make -C Builds;/Builds/archive Extract /tmp",
       "input": "",
       "output": "Extract test PASS",
       "comparison": "included",
@@ -113,7 +113,7 @@
     {
       "name": "Compress Test NEW",
       "setup": "",
-      "run": ".cmake -B Builds; make -C Builds;/Builds/archive Compact /tmp",
+      "run": "cmake -B Builds; make -C Builds;/Builds/archive Compact /tmp",
       "input": "",
       "output": "Compact test PASS",
       "comparison": "included",
