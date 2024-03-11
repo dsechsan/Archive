@@ -19,6 +19,7 @@
 #include <sstream>
 #include <iomanip>
 #include <functional>
+#include <cstring>
 
 const int kChunkSize = 1024;
 #pragma pack(push, 1)
