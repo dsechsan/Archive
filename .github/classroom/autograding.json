@@ -23,7 +23,7 @@
     {
       "name": "Memory Errors Test -- 1pts",
       "setup": "sudo apt-get update > /dev/null; sudo apt-get install valgrind > /dev/null",
-      "run": "valgrind --tool=memcheck --leak-check=full --error-exitcode=1 ./Builds/archive All /tmp",
+      "run": "valgrind --tool=memcheck --leak-check=full --track-origins=yes --error-exitcode=1 ./Builds/archive All /tmp",
       "input": "",
       "output": "",
       "comparison": "included",
