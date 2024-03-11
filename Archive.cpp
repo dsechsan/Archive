@@ -51,8 +51,7 @@ namespace ECE141 {
             return ArchiveStatus<std::shared_ptr<Archive>>(ArchiveErrors::fileOpenError);
         }
 
-        auto theArchivePtr = std::shared_ptr<Archive>(new Archive(theArchiveName, AccessMode::AsNew),
-                                                           [](Archive *p) { delete p; });
+        auto theArchivePtr = std::shared_ptr<Archive>(new Archive(theArchiveName, AccessMode::AsNew));
         theArchivePtr->chunkManager = std::make_shared<ChunkManager>(theArchiveName);
 //        theArchivePtr->chunkManager->readChunksFromFile();
 
@@ -72,8 +71,7 @@ namespace ECE141 {
             return ArchiveStatus<std::shared_ptr<Archive>>(ArchiveErrors::fileNotFound);
         }
 
-        auto theArchivePtr = std::shared_ptr<Archive>(new Archive(theArchiveName, AccessMode::AsExisting),
-                                                      [](Archive *p) { delete p; });
+        auto theArchivePtr = std::shared_ptr<Archive>(new Archive(theArchiveName, AccessMode::AsExisting));
 
         theArchivePtr->chunkManager = std::make_shared<ChunkManager>(theArchiveName);
         theArchivePtr->chunkManager->getArchiveChunkCount();

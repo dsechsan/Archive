@@ -35,7 +35,7 @@ struct Header{
 const int kAvailableSize = kChunkSize -sizeof(Header);
 struct Chunk{
     Header header;
-    char data[kAvailableSize];
+    char data[kAvailableSize] = {};
     Chunk(): header{false,0,0,0,0,0, "null", "null"} {};
 };
 
@@ -44,7 +44,7 @@ class ChunkManager{
 public:
     ChunkManager()= default;
     explicit ChunkManager(const std::string &FileName): archiveFileName(FileName),inputFileSize(0), inputFile("null"){
-        archiveFileStream.open(FileName, std::ios::binary | std ::ios::out | std::ios::in);
+        archiveFileStream.open(archiveFileName, std::ios::binary | std ::ios::out | std::ios::in);
         archiveFileStream.seekp(0, std::ios::end);
 //        archiveFileStream << "This is a test\n";
         if(!archiveFileStream.is_open()){
@@ -141,14 +141,11 @@ public:
 //        else return 0;
 //    }
 
-    bool find(const std::string &aName, int* aFindIndex = nullptr ){
+    bool find(const std::string &aName){
         bool found = false;
         if (numberOfChunks) {
             each([&](Chunk& theChunk, size_t aPos) -> bool {
                 if (theChunk.header.fileName == aName && theChunk.header.partNum == 1) {
-                    if (aFindIndex != nullptr) {
-                        *aFindIndex = static_cast<int>(theChunk.header.ChunkNum); // Cast ChunkNum to int
-                    }
                     found = true;
                     return false; // Return false to stop iterating once found
                 }
@@ -333,7 +330,7 @@ public:
 
 private:
     std::vector<Chunk> theChunks;
-    size_t numberOfChunks;
+    size_t numberOfChunks = 0;
     std::string archiveFileName;
     std::fstream archiveFileStream;
     std::string inputFile; // for the add operation
