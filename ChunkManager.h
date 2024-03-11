@@ -18,6 +18,7 @@
 #include <ctime>
 #include <sstream>
 #include <functional>
+#include <iomanip>
 
 const int kChunkSize = 1024;
 #pragma pack(push, 1)
