@@ -23,7 +23,7 @@
     {
       "name": "Memory Errors Test -- 1pts",
       "setup": "sudo apt-get update > /dev/null; sudo apt-get install valgrind > /dev/null",
-      "run": "valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all --error-exitcode=1 ./Builds/archive All /tmp",
+      "run": "valgrind --tool=memcheck --leak-check=full --track-origins=yes --error-exitcode=1 ./Builds/archive All /tmp",
       "input": "",
       "output": "",
       "comparison": "included",
@@ -32,8 +32,8 @@
     },
     {
       "name": "Create archive test -- 10pts",
-      "setup": "cmake -B Builds; make -C Builds > compile_output.txt 2>&1",
-      "run": " ./Builds/archive Create /tmp",
+      "setup": "",
+      "run": "./Builds/archive Create /tmp",
       "input": "",
       "output": "Create test PASS",
       "comparison": "included",
@@ -42,7 +42,7 @@
     },
     {
       "name": "Open archive test -- 10pts",
-      "setup": "cmake -B Builds; make -C Builds --silent",
+      "setup": "",
       "run": "./Builds/archive Open /tmp",
       "input": "",
       "output": "Open test PASS",
@@ -52,7 +52,7 @@
     },
     {
       "name": "Add documents test -- 15pts",
-      "setup": "cmake -B Builds; make -C Builds --silent",
+      "setup": "",
       "run": "./Builds/archive Add /tmp",
       "input": "",
       "output": "Add test PASS",
@@ -62,7 +62,7 @@
     },
     {
       "name": "Remove documents test -- 15pts",
-      "setup": "cmake -B Builds; make -C Builds --silent",
+      "setup": "",
       "run": "./Builds/archive Remove /tmp",
       "input": "",
       "output": "Remove test PASS",
@@ -72,7 +72,7 @@
     },
     {
       "name": "List documents test -- 10pts",
-      "setup": "cmake -B Builds; make -C Builds --silent",
+      "setup": "",
       "run": "./Builds/archive List /tmp",
       "input": "",
       "output": "List test PASS",
@@ -82,7 +82,7 @@
     },
     {
       "name": "Dump blocks test -- 10pts",
-      "setup": "cmake -B Builds; make -C Builds --silent",
+      "setup": "",
       "run": "./Builds/archive Dump /tmp",
       "input": "",
       "output": "Dump test PASS",
@@ -92,7 +92,7 @@
     },
     {
       "name": "Stress Test NEW",
-      "setup": "cmake -B Builds; make -C Builds --silent",
+      "setup": "",
       "run": "./Builds/archive Stress /tmp",
       "input": "",
       "output": "Stress test PASS",
@@ -102,7 +102,7 @@
     },
     {
       "name": "Extract documents test -- NEW",
-      "setup": "cmake -B Builds; make -C Builds --silent",
+      "setup": "",
       "run": "./Builds/archive Extract /tmp",
       "input": "",
       "output": "Extract test PASS",
@@ -112,10 +112,10 @@
     },
     {
       "name": "Compress Test NEW",
-      "setup": "cmake -B Builds; make -C Builds --silent",
-      "run": "./Builds/archive Compact /tmp",
+      "setup": "",
+      "run": "./Builds/archive Compress /tmp",
       "input": "",
-      "output": "Compact test PASS",
+      "output": "Compress test PASS",
       "comparison": "included",
       "timeout": 10,
       "points": 65
