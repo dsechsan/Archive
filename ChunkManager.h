@@ -38,9 +38,9 @@ struct Header{
 
 const int kAvailableSize = kChunkSize -sizeof(Header);
 struct Chunk{
-    Header header;
-    char data[kAvailableSize] = {};
     Chunk(): header{false,0,0,0,0,0, "null", "null"} {};
+    char data[kAvailableSize] = {};
+    Header header;
 };
 
 using ChunkCallback = std::function<bool(Chunk &,size_t)>;
