@@ -225,7 +225,8 @@ public:
 
         std::ofstream theOutputFileStream(aFullPath, std::ios::binary | std::ios::out);
         for (const auto& pair : theFileMap){
-            Chunk theChunk = {};
+            Chunk theChunk;
+            std::memset(&theChunk,0,sizeof(theChunk));
 
             archiveFileStream.seekg((pair.second)*kChunkSize, std::ios::beg);
             archiveFileStream.read(reinterpret_cast<char*>(&theChunk.header),sizeof(Header));
