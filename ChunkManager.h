@@ -129,6 +129,7 @@ public:
         size_t thePos{0};
         bool theResult{true};
         Chunk theChunk;
+        std::memset(&theChunk,0,sizeof(theChunk));
         while(theResult){
             theResult = getChunk(theChunk,thePos);
             if(theResult){
