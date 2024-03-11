@@ -60,9 +60,9 @@ public:
     }
 
     void addChunks(size_t numChunksToAdd){
-        Chunk theChunk;
         for(int i = 0; i<numChunksToAdd; i++){
-            std::memset(&theChunk,0,sizeof(theChunk));
+            Chunk theChunk;
+//            std::memset(&theChunk,0,sizeof(theChunk));
             archiveFileStream.seekp(0,std::ios::end);
             archiveFileStream.write(reinterpret_cast<char*>(&theChunk),sizeof(theChunk));
             numberOfChunks++;
@@ -135,7 +135,7 @@ public:
         size_t thePos{0};
         bool theResult{true};
         Chunk theChunk;
-        std::memset(&theChunk,0,sizeof(theChunk));
+//        std::memset(&theChunk,0,sizeof(theChunk));
         while(theResult){
             theResult = getChunk(theChunk,thePos);
             if(theResult){
@@ -195,12 +195,13 @@ public:
 
         theFreeIdx = getFreeChunks();
 
-        Chunk theChunk;
+//        Chunk theChunk;
         std::ifstream theInputStream(inputFile,std::ios::binary | std::ios::in);
         for(auto i = 0;i< theReqdNumOfChunks; i++) {
             archiveFileStream.seekp(kChunkSize*theFreeIdx[i],std::ios::beg);
 
-            std::memset(&theChunk,0,sizeof(theChunk));
+            Chunk theChunk;
+//            std::memset(&theChunk,0,sizeof(theChunk));
             theDataSize = (theStreamPos + kChunkSize - sizeof(theChunk.header) > theFileSize) ? theFileSize - theStreamPos : kChunkSize - sizeof(theChunk.header);
             theInputStream.seekg(static_cast<int>(theStreamPos), std::ios::beg);
             theInputStream.read(theChunk.data, static_cast<long>(theDataSize));
@@ -228,9 +229,9 @@ public:
         if(theFileMap.empty()) return false;
 
         std::ofstream theOutputFileStream(aFullPath, std::ios::binary | std::ios::out);
-        Chunk theChunk;
         for (const auto& pair : theFileMap){
-            std::memset(&theChunk,0,sizeof(theChunk));
+//            std::memset(&theChunk,0,sizeof(theChunk));
+            Chunk theChunk;
 
             archiveFileStream.seekg(static_cast<int>((pair.second)*kChunkSize), std::ios::beg);
             archiveFileStream.read(reinterpret_cast<char*>(&theChunk.header),sizeof(Header));
