@@ -15,7 +15,7 @@
 
 std::string getLocalFolder() {
   //return std::string("c:/xxx/yyy");
-  return std::string("/Users/dsechs/Library/CloudStorage/OneDrive-UCSanDiego/Desktop/ECE 141A/PA4"); //SET PATH TO LOCAL ARCHIVE FOLDER
+  return std::string("/Users/dsechs/Library/CloudStorage/OneDrive-UCSanDiego/Desktop/ECE 141A/PA4/tmp"); //SET PATH TO LOCAL ARCHIVE FOLDER
 }
 
 int main(int argc, const char * argv[]) {

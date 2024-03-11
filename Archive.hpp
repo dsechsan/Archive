@@ -121,7 +121,7 @@ namespace ECE141 {
 
         static std::string getFileName(const std::string &aFullPath );
 
-        std::unique_ptr<ChunkManager> chunkManager;
+        std::shared_ptr<ChunkManager> chunkManager;
 
     };
 

@@ -46,7 +46,6 @@ namespace ECE141 {
         }
 
         std::ofstream theFileStream(theArchiveName, std::ios::binary | std::ios::out | std::ios::trunc);
-        theFileStream << "how's life, you bastard?\n";
         if(!theFileStream.is_open()){
             std::cerr << "error opening file\n" ;
             return ArchiveStatus<std::shared_ptr<Archive>>(ArchiveErrors::fileOpenError);
@@ -54,13 +53,16 @@ namespace ECE141 {
 
         auto theArchivePtr = std::shared_ptr<Archive>(new Archive(theArchiveName, AccessMode::AsNew),
                                                            [](Archive *p) { delete p; });
+        theArchivePtr->chunkManager = std::make_shared<ChunkManager>(theArchiveName);
+//        theArchivePtr->chunkManager->readChunksFromFile();
+
         return ArchiveStatus<std::shared_ptr<Archive>>(theArchivePtr);
 
   }
 
     ArchiveStatus<std::shared_ptr<Archive>> Archive::openArchive(const std::string &anArchiveName){
-        std::string theArchiveName = getFileName(anArchiveName);
-        if (anArchiveName.length() > 4 && (anArchiveName.rfind(".arc") == anArchiveName.length() - 4)) {
+        std::string theArchiveName = anArchiveName;
+        if (anArchiveName.length() > 4 && (anArchiveName.rfind(".arc") != anArchiveName.length() - 4)) {
             theArchiveName += ".arc";
         }
         std::ifstream theFileStream(theArchiveName, std::ios::binary | std::ios::in);
@@ -73,8 +75,8 @@ namespace ECE141 {
         auto theArchivePtr = std::shared_ptr<Archive>(new Archive(theArchiveName, AccessMode::AsExisting),
                                                       [](Archive *p) { delete p; });
 
-        theArchivePtr->chunkManager = std::make_unique<ChunkManager>(theFileStream);
-        theArchivePtr->chunkManager->readChunksFromFile();
+        theArchivePtr->chunkManager = std::make_shared<ChunkManager>(theArchiveName);
+        theArchivePtr->chunkManager->getArchiveChunkCount();
         theFileStream.close();
 
         return ArchiveStatus<std::shared_ptr<Archive>>(theArchivePtr);
@@ -101,27 +103,27 @@ namespace ECE141 {
                 std::cerr << "File doesn't exist in memory\n" ;
                 return ArchiveStatus<bool>(ArchiveErrors::fileNotFound);
             }
-            chunkManager->setInputStream(&theFileStream);
-            chunkManager->writeDataToChunks(theFileName);
+            chunkManager->setInputFileName(aFullPath);
+//            chunkManager->writeDataToChunks(theFileName);
+            chunkManager->writeChunksToArchive(theFileName);
 
             theFileStream.close();
-            return ArchiveStatus<bool>(ArchiveErrors::noError);
+            return ArchiveStatus<bool>(true);
         }
     }
 
     ArchiveStatus<bool>   Archive::extract(const std::string &aFilename, const std::string &aFullPath) {
         bool theStatus{false};
 
-        std::ofstream theFileStream(aFullPath, std::ios::binary | std::ios::out);
-        chunkManager->setOutputStream((&theFileStream));
+//        std::ofstream theFileStream(aFullPath, std::ios::binary | std::ios::out);
         if(chunkManager->find(aFilename) ){
-            theStatus = chunkManager->retrieve(aFilename);
+            theStatus = chunkManager->retrieve(aFilename,aFullPath);
         }else{
             return ArchiveStatus<bool>(ArchiveErrors::badFilename);
         }
-        theFileStream.close();
+//        theFileStream.close();
 
-        if(theStatus) return ArchiveStatus<bool>(ArchiveErrors::noError);
+        if(theStatus) return ArchiveStatus<bool>(true);
         return ArchiveStatus<bool>(ArchiveErrors::fileWriteError);
     }
 
@@ -131,7 +133,7 @@ namespace ECE141 {
             theStatus = chunkManager->deleteChunksOfFile(aFilename);
         }
         else return ArchiveStatus<bool>(ArchiveErrors::badArchive);
-        if(theStatus) return ArchiveStatus<bool>(ArchiveErrors::noError);
+        if(theStatus) return ArchiveStatus<bool>(true);
     }
 
     ArchiveStatus<size_t>  Archive::list(std::ostream &aStream){
@@ -142,13 +144,12 @@ namespace ECE141 {
 
     ArchiveStatus<size_t>  Archive::debugDump(std::ostream &aStream){
         chunkManager->dump(aStream);
-        return ArchiveStatus<size_t>(chunkManager->getNumberOfChunks());
+        return ArchiveStatus<size_t>(chunkManager->getArchiveChunkCount());
     }
 
     ArchiveStatus<size_t>  Archive::compact(){
-        chunkManager->removeEmptyChunks();
-        chunkManager->updateAfterCompact();
-        auto theNumChunks = chunkManager->getNumberOfChunks();
+        chunkManager->Compact();
+        auto theNumChunks = chunkManager->getArchiveChunkCount();
         return ArchiveStatus<size_t>(theNumChunks);
     }
 

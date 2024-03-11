@@ -19,6 +19,7 @@
 #include <sstream>
 
 const int kChunkSize = 1024;
+#pragma pack(push, 1)
 struct Header{
     bool occupied;
     size_t ChunkNum;
@@ -29,10 +30,12 @@ struct Header{
     std::string fileName;
     std::string timeInserted;
 };
+#pragma pack(pop)
+
 const int kAvailableSize = kChunkSize -sizeof(Header);
 struct Chunk{
     Header header;
-    char data[kAvailableSize] = {};
+    char data[kAvailableSize];
     Chunk(): header{false,0,0,0,0,0, "null", "null"} {};
 };
 
@@ -40,33 +43,59 @@ using ChunkCallback = std::function<bool(Chunk &,size_t)>;
 class ChunkManager{
 public:
     ChunkManager()= default;
-    explicit ChunkManager(std::istream& anInput) : inputStream(&anInput), outputStream(nullptr){};
-    explicit ChunkManager(std::ostream& anOutput) : inputStream(nullptr), outputStream(&anOutput){};
-    ~ChunkManager() = default;
-
-    void addChunks(size_t numberOfChunks){
-        for(int i = 0; i<numberOfChunks; i++){
-            Chunk theChunk;
-            theChunks.push_back(theChunk);
+    explicit ChunkManager(const std::string &FileName): archiveFileName(FileName),inputFileSize(0), inputFile("null"){
+        archiveFileStream.open(FileName, std::ios::binary | std ::ios::out | std::ios::in);
+        archiveFileStream.seekp(0, std::ios::end);
+//        archiveFileStream << "This is a test\n";
+        if(!archiveFileStream.is_open()){
+            std::cerr << "Unable to open the archive file\n";
         }
     }
 
-    [[nodiscard]] size_t getFileSize() const{
-        if(inputStream) {
-            inputStream->seekg(0, std::ios::end);
-            return inputStream->tellg();
+    ~ChunkManager(){
+        if(archiveFileStream.is_open()) archiveFileStream.close();
+    }
+
+    void addChunks(size_t numChunksToAdd){
+        for(int i = 0; i<numChunksToAdd; i++){
+            Chunk theChunk;
+            archiveFileStream.seekp(0,std::ios::end);
+            archiveFileStream.write(reinterpret_cast<char*>(&theChunk),sizeof(theChunk));
+            numberOfChunks++;
+            if(archiveFileStream.fail()){
+                std::cerr << "failed to add chunks to the archive file\n";
+            }
         }
-        return 0;
+    }
+
+    size_t getArchiveChunkCount(){
+        if(!archiveFileStream.is_open()) std::cerr << "unable to open archive stream to read\n";
+        archiveFileStream.seekg(0,std::ios::end);
+        numberOfChunks = archiveFileStream.tellg() / kChunkSize;
+        return numberOfChunks;
+    }
+
+    [[nodiscard]] size_t getInputFileSize() const{
+        std::ifstream theInputStream(inputFile, std::ios::binary | std::ios::in);
+        if (!theInputStream.is_open()) std::cerr << "unable to open file\n";
+        theInputStream.seekg(0, std::ios::end);
+        inputFileSize = theInputStream.tellg();
+        theInputStream.seekg(0,std::ios::beg);
+
+        return inputFileSize;
     }
 
     [[nodiscard]] size_t getInputChunkCount() const{
-        auto theSize = getFileSize();
+        auto theSize = getInputFileSize();
         return (theSize/kChunkSize) + (theSize % kChunkSize? 1: 0);
     }
 
     bool getChunk(Chunk &theChunk , size_t aPos){
-        if(aPos < theChunks.size()) {
-            theChunk = theChunks[aPos];
+        if(aPos < numberOfChunks) {
+            size_t theChunkPos = kChunkSize*aPos;
+            archiveFileStream.seekg(static_cast<int>(theChunkPos),std::ios::beg);
+            archiveFileStream.read(reinterpret_cast<char *>(&theChunk.header), sizeof(Header));
+            archiveFileStream.read(theChunk.data, kAvailableSize);
             return true;
         }else{
             return false;
@@ -90,7 +119,7 @@ public:
         std::time_t now_c = std::chrono::system_clock::to_time_t(now);
         std::tm* local_time = std::localtime(&now_c);
         std::stringstream ss ;
-        ss << std::put_time(local_time, "%d-%m-%Y %H;%M;%s");
+        ss << std::put_time(local_time, "%d-%m-%Y  %H:%M:%S");
         return ss.str();
     }
 
@@ -107,25 +136,28 @@ public:
         return true;
     }
 
-    size_t getNumberOfChunks(){
-        return theChunks.size();
-    }
+//    size_t getNumberOfChunks(){
+//        if(!theChunks.empty()) return theChunks.size();
+//        else return 0;
+//    }
 
     bool find(const std::string &aName, int* aFindIndex = nullptr ){
         bool found = false;
-        if(getNumberOfChunks()) {
-            each([&](Chunk &theChunk, size_t aPos) {
+        if (numberOfChunks) {
+            each([&](Chunk& theChunk, size_t aPos) -> bool {
                 if (theChunk.header.fileName == aName && theChunk.header.partNum == 1) {
                     if (aFindIndex != nullptr) {
-                        *aFindIndex = static_cast<int>(theChunk.header.ChunkNum);
+                        *aFindIndex = static_cast<int>(theChunk.header.ChunkNum); // Cast ChunkNum to int
                     }
                     found = true;
-                    return true;
+                    return false; // Return false to stop iterating once found
                 }
-                return false;
+                return true; // Return true to continue iterating if not found
             });
             return found;
-        }else return false;
+        } else {
+            return false; // Return false if there are no chunks
+        }
     };
 
     std::map<size_t, size_t> getChunksOfAFile(const std::string &aName){
@@ -137,24 +169,14 @@ public:
             }
             return true;
         });
-//        int theChunkIdx{-1};
-//        find(aName,&theChunkIdx);
-//        while(theChunkIdx!= -1) {
-//            Chunk theChunk;
-//            if(getChunk(theChunk, theChunkIdx)){
-//                if(theChunk.header.fileName == aName && theChunk.header.partNum){
-//                    theFileMap[theChunk.header.partNum] = theChunkIdx;
-//                }
-//                theChunkIdx = static_cast<int>(theChunk.header.nextIdx);
-//            } else break;
-//
-//        }
         return  theFileMap;
     };
 
     // Chunkify a normal file
-    void writeDataToChunks(const std::string& aFileName){
-        size_t theFileSize = getFileSize();
+    void writeChunksToArchive(const std::string& aFileName){
+        numberOfChunks = getArchiveChunkCount();
+
+        size_t theFileSize = getInputFileSize();
         size_t theReqdNumOfChunks = getInputChunkCount();
         size_t theStreamPos{0};
         size_t theDataSize{0};
@@ -167,64 +189,48 @@ public:
 
         theFreeIdx = getFreeChunks();
 
-
+        std::ifstream theInputStream(inputFile,std::ios::binary | std::ios::in);
         for(auto i = 0;i< theReqdNumOfChunks; i++) {
+            archiveFileStream.seekp(kChunkSize*theFreeIdx[i],std::ios::beg);
+
+            Chunk theChunk;
             theDataSize = (theStreamPos + kAvailableSize > theFileSize) ? theFileSize - theStreamPos : kAvailableSize;
-            inputStream->seekg(static_cast<int>(theStreamPos), std::ios::beg);
-            inputStream->read(theChunks[theFreeIdx[i]].data, static_cast<long>(theDataSize));
+            theInputStream.seekg(static_cast<int>(theStreamPos), std::ios::beg);
+            theInputStream.read(theChunk.data, static_cast<long>(theDataSize));
             theStreamPos += theDataSize;
 
-            theChunks[theFreeIdx[i]].header.timeInserted = getTimeInserted();
-            theChunks[theFreeIdx[i]].header.fileName = aFileName;
-            theChunks[theFreeIdx[i]].header.occupied = true;
-            theChunks[theFreeIdx[i]].header.partNum = i + 1;
-            theChunks[theFreeIdx[i]].header.ChunkNum = theFreeIdx[i];
-            theChunks[theFreeIdx[i]].header.dataSize = theDataSize;
-            theChunks[theFreeIdx[i]].header.fileSize = theFileSize;
+            theChunk.header.timeInserted = getTimeInserted();
+            theChunk.header.fileName = aFileName;
+            theChunk.header.occupied = true;
+            theChunk.header.partNum = i + 1;
+            theChunk.header.ChunkNum = theFreeIdx[i];
+            theChunk.header.dataSize = theDataSize;
+            theChunk.header.fileSize = theFileSize;
             if (i != theReqdNumOfChunks - 1) {
-                theChunks[theFreeIdx[i]].header.nextIdx = theFreeIdx[i + 1];
+                theChunk.header.nextIdx = theFreeIdx[i + 1];
             }
-            else theChunks[theFreeIdx[i]].header.nextIdx = -1;
+            else theChunk.header.nextIdx = 0;
+
+            archiveFileStream.write(reinterpret_cast<const char*>(&theChunk),sizeof(theChunk));
+
         }
     }
 
-    bool writeChunksToFile(){
-        for(auto &theChunk : theChunks) {
-            outputStream->write(reinterpret_cast<const char *>(&theChunk), sizeof(theChunk));
-            if(outputStream->fail()){
-                std::cerr << "failed to write to the archive file\n";
-                return false;
-            }
-        }
-        return true;
-    };
-
-    bool readChunksFromFile(){
-        bool theStatus{false};
-        if(inputStream) {
-            inputStream->seekg(0, std::ios::end);
-            size_t theInputChunks = (inputStream->tellg()) / kChunkSize;
-            inputStream->seekg(0); // place the pointer back at the beginning of the stream
-            if (!theChunks.empty()) {
-                theChunks.clear();
-            }
-            addChunks(theInputChunks);
-            each([&](Chunk &theChunk, size_t aPos) {
-                inputStream->read(reinterpret_cast<char *>(&theChunks[aPos].header), sizeof(Header));
-                inputStream->read(theChunks[aPos].data, kAvailableSize);
-                theStatus = true;
-                return true;
-            });
-        }
-        return theStatus;
-    }
-
-    bool retrieve(const std::string &aName){
+    bool retrieve(const std::string &aName, const std::string &aFullPath){
         auto theFileMap = getChunksOfAFile(aName);
+        if(theFileMap.empty()) return false;
+
+        std::ofstream theOutputFileStream(aFullPath, std::ios::binary | std::ios::out);
         for (const auto& pair : theFileMap){
-            auto theChunk = theChunks[pair.second];
-            outputStream->write(theChunk.data,static_cast<long>(theChunk.header.dataSize));
-            if(outputStream->fail()){
+            Chunk theChunk = {};
+
+            archiveFileStream.seekg((pair.second)*kChunkSize, std::ios::beg);
+            archiveFileStream.read(reinterpret_cast<char*>(&theChunk.header),sizeof(Header));
+
+            archiveFileStream.seekg((pair.second)*kChunkSize + sizeof(Header), std::ios::beg);
+            archiveFileStream.read(reinterpret_cast<char*>(&theChunk.data),kAvailableSize);
+            theOutputFileStream.write(theChunk.data,static_cast<long>(theChunk.header.dataSize));
+            if(theOutputFileStream.fail()){
                 std::cerr << "failed to write the file data\n";
                 return false;
             }
@@ -234,60 +240,77 @@ public:
 
     bool deleteChunksOfFile(const std::string &aName){
         auto theFileMap = getChunksOfAFile(aName);
+        if(theFileMap.empty()) return false;
+
         for(const auto& pair : theFileMap){
-            auto theChunk = theChunks[pair.second];
-            std::memset(theChunk.data, '\0', theChunk.header.dataSize);
-            theChunk.header = {false,0,0,0,0,0, "null", "null"};
+            archiveFileStream.seekp((pair.second)*kChunkSize,std::ios::beg);
+            Chunk theEmptyChunk = {};
+            archiveFileStream.write(reinterpret_cast<const char*>(&theEmptyChunk),sizeof(theEmptyChunk));
+            emptyChunkIdx.push_back(pair.second);
+            if(archiveFileStream.fail()){
+                archiveFileStream.clear();
+                return false;
+            }
         }
         return true;
     }
 
-    void removeEmptyChunks(){
-        auto newEnd = std::remove_if(theChunks.begin(),theChunks.end(),
-                                     [](const Chunk& chunk) { return !chunk.header.occupied; });
-        theChunks.erase(newEnd, theChunks.end());
-    }
+    void Compact(){
 
-    void updateAfterCompact(){
-       std::map<std::string, std::vector<size_t>> theFileIdxMap;
+        std::string tempfile = "/Users/dsechs/Library/CloudStorage/OneDrive-UCSanDiego/Desktop/ECE 141A/PA4/tmp/temp.arc";
+       std::fstream theTempFileStream(tempfile, std::ios::binary | std::ios::out | std::ios::in | std::ios::trunc);
+       if(!theTempFileStream.is_open()) std::cerr << "Failed to open temporary file\n";
+
+       int theNewIdx = 0;
+       std::map<size_t, int> theIndexMap;
        each([&](Chunk &theChunk, size_t aPos){
            if(theChunk.header.occupied) {
-               theFileIdxMap[theChunk.header.fileName].push_back(aPos);
+               theIndexMap[theChunk.header.ChunkNum] = theNewIdx;
+               theChunk.header.ChunkNum = theNewIdx;
+               theTempFileStream.seekp(0,std::ios::end);
+               theTempFileStream.write(reinterpret_cast<const char*>(&theChunk),kChunkSize);
+               theNewIdx++;
            }
            return true;
        });
 
-        // arrange the chunknum values in the order of the partnums
-        for (auto& pair : theFileIdxMap) {
-            std::sort(pair.second.begin(), pair.second.end(), [&](size_t a, size_t b) {
-                return theChunks[a].header.partNum < theChunks[b].header.partNum;
-            });
-        }
+       each([&](Chunk &theChunk, size_t aPos){
+           if(theChunk.header.nextIdx){
+               theChunk.header.nextIdx = theIndexMap[theChunk.header.nextIdx];
+           }
+           return true;
+       });
 
-        //update the next_idx
-        for(auto& pair : theFileIdxMap){
-            size_t index = 0;
-            for(auto current = pair.second.begin(); current != pair.second.end(); ++current, ++index){
-                if(std::next(current) != pair.second.end()){
-                    theChunks[*current].header.nextIdx = *(std::next(current));
-                }else{
-                    theChunks[*current].header.nextIdx = -1;
-                }
-            }
+       theTempFileStream.flush();
+       theTempFileStream.seekg(0,std::ios::beg);
+
+       archiveFileStream.close();
+       archiveFileStream.open(archiveFileName, std::ios::binary | std ::ios::out | std::ios::in | std::ios::trunc);
+
+       if(theTempFileStream && archiveFileStream) archiveFileStream << theTempFileStream.rdbuf();
+
+        if (std::remove(tempfile.c_str()) != 0) {
+            std::perror("Error deleting temporary file");
+        } else {
+            std::cout << "Temporary file deleted successfully." << std::endl;
         }
 
     }
 
     void listFiles(std::ostream& anOutput, size_t* aNumFiles = nullptr){
-        anOutput << "###   name               size               date added\n";
-        anOutput << "------------------------------------------------------\n";
+        anOutput << std::left << std::setw(2) << "###" << " ";
+        anOutput << std::setw(15) << "name" << " ";
+        anOutput << std::setw(10) <<  "size" << " ";
+        anOutput << std::setw(20) << "date added" << "\n";
+        anOutput << "-----------------------------------------------------\n";
 
         each([&](Chunk& aChunk, size_t aPos) {
             if (aChunk.header.occupied && aChunk.header.partNum == 1) {
-                anOutput << std::setw(5) << std::right << ++(*aNumFiles) << ".  ";
-                anOutput << std::setw(12) << std::left << aChunk.header.fileName << " ";
-                anOutput << std::setw(12) << std::right << aChunk.header.fileSize << "    ";
-                anOutput << aChunk.header.timeInserted << "\n";
+                anOutput << std::right << std::setw(2) << ++(*aNumFiles) << ". ";
+                anOutput << std::left << std::setw(15) << aChunk.header.fileName << " ";
+                anOutput << std::setw(10) << aChunk.header.fileSize << " ";
+                // Assuming `timeInserted` is a string that fits in 20 characters
+                anOutput << std::right << std::setw(20) << aChunk.header.timeInserted << "\n";
             }
             return true;
         });
@@ -299,23 +322,23 @@ public:
         each([&](Chunk& theChunk, size_t aPos){
             std::string status = theChunk.header.occupied ? "used": "empty";
             std::string name = theChunk.header.occupied ? theChunk.header.fileName : "";
-            anOutput << std::setw(3) << (aPos + 1) << ".   " << std::setw(8) << status << "     " << name << "\n";
+            anOutput << (aPos + 1) << ".   " << status << "     " << name << "\n";
             return true;
         });
     }
 
-    void setInputStream(std::istream* anInputStream) {
-        inputStream = anInputStream;
-    }
-
-    void setOutputStream(std::ostream* anOutputStream) {
-        outputStream = anOutputStream;
+    void setInputFileName(const std::string& anInputFile) {
+        inputFile = anInputFile;
     }
 
 private:
     std::vector<Chunk> theChunks;
-    std::istream* inputStream;
-    std::ostream* outputStream;
+    size_t numberOfChunks;
+    std::string archiveFileName;
+    std::fstream archiveFileStream;
+    std::string inputFile; // for the add operation
+    mutable size_t inputFileSize;
+    std::vector<size_t> emptyChunkIdx;
 };
 
 #endif //ECE141_ARCHIVE_CHUNKMANAGER_H
