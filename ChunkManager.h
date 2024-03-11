@@ -62,7 +62,7 @@ public:
     void addChunks(size_t numChunksToAdd){
         Chunk theChunk;
         for(int i = 0; i<numChunksToAdd; i++){
-            std::memset(&theChunk,0,sizeof(theChunk));
+            std::memset(&theChunk.data,0,sizeof(theChunk.data));
             archiveFileStream.seekp(0,std::ios::end);
             archiveFileStream.write(reinterpret_cast<char*>(&theChunk),sizeof(theChunk));
             numberOfChunks++;
@@ -109,7 +109,7 @@ public:
         std::vector<int> theList;
         each([&](Chunk& theChunk, size_t aPos){
             if (!theChunk.header.occupied) {
-                theList.push_back(aPos);
+                theList.push_back(static_cast<int>(aPos));
                 return true;
             }
             return true;
@@ -117,7 +117,7 @@ public:
         return theList;
     }
 
-    std::string getTimeInserted(){
+    static std::string getTimeInserted(){
         auto now = std::chrono::system_clock::now();
         std::time_t now_c = std::chrono::system_clock::to_time_t(now);
         std::tm* local_time = std::localtime(&now_c);
@@ -135,7 +135,7 @@ public:
         size_t thePos{0};
         bool theResult{true};
         Chunk theChunk;
-        std::memset(&theChunk,0,sizeof(theChunk));
+        std::memset(&theChunk.data,0,sizeof(theChunk.data));
         while(theResult){
             theResult = getChunk(theChunk,thePos);
             if(theResult){
@@ -200,7 +200,7 @@ public:
         for(auto i = 0;i< theReqdNumOfChunks; i++) {
             archiveFileStream.seekp(kChunkSize*theFreeIdx[i],std::ios::beg);
 
-            std::memset(&theChunk,0,sizeof(theChunk));
+            std::memset(&theChunk.data,0,sizeof(theChunk.data));
             theDataSize = (theStreamPos + kChunkSize - sizeof(theChunk.header) > theFileSize) ? theFileSize - theStreamPos : kChunkSize - sizeof(theChunk.header);
             theInputStream.seekg(static_cast<int>(theStreamPos), std::ios::beg);
             theInputStream.read(theChunk.data, static_cast<long>(theDataSize));
@@ -230,12 +230,12 @@ public:
         std::ofstream theOutputFileStream(aFullPath, std::ios::binary | std::ios::out);
         Chunk theChunk;
         for (const auto& pair : theFileMap){
-            std::memset(&theChunk,0,sizeof(theChunk));
+            std::memset(&theChunk.data,0,sizeof(theChunk.data));
 
-            archiveFileStream.seekg((pair.second)*kChunkSize, std::ios::beg);
+            archiveFileStream.seekg(static_cast<int>((pair.second)*kChunkSize), std::ios::beg);
             archiveFileStream.read(reinterpret_cast<char*>(&theChunk.header),sizeof(Header));
 
-            archiveFileStream.seekg((pair.second)*kChunkSize + sizeof(Header), std::ios::beg);
+            archiveFileStream.seekg(static_cast<int>((pair.second)*kChunkSize + sizeof(Header)), std::ios::beg);
             archiveFileStream.read(reinterpret_cast<char*>(&theChunk.data),kAvailableSize);
             theOutputFileStream.write(theChunk.data,static_cast<long>(theChunk.header.dataSize));
             if(theOutputFileStream.fail()){
@@ -251,9 +251,9 @@ public:
         if(theFileMap.empty()) return false;
 
         for(const auto& pair : theFileMap){
-            archiveFileStream.seekp((pair.second)*kChunkSize,std::ios::beg);
+            archiveFileStream.seekp(static_cast<int>((pair.second)*kChunkSize),std::ios::beg);
             Chunk theEmptyChunk;
-            std::memset(&theEmptyChunk,0,sizeof(theEmptyChunk));
+            std::memset(&theEmptyChunk.data,0,sizeof(theEmptyChunk.data));
             archiveFileStream.write(reinterpret_cast<const char*>(&theEmptyChunk),sizeof(theEmptyChunk));
             emptyChunkIdx.push_back(pair.second);
             if(archiveFileStream.fail()){
