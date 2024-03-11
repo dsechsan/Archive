@@ -181,10 +181,16 @@ public:
         size_t theReqdNumOfChunks = getInputChunkCount();
         size_t theStreamPos{0};
         size_t theDataSize{0};
+        std::vector<int> theFreeIdx;
 
-        auto theFreeIdx = getFreeChunks();
+        if(numberOfChunks!= 0) {
+            theFreeIdx = getFreeChunks();
+        }
 
-        if(theFreeIdx.size() < theReqdNumOfChunks){
+        if(theFreeIdx.empty()){
+            addChunks(theReqdNumOfChunks);
+        }
+        else if(theFreeIdx.size() < theReqdNumOfChunks){
             addChunks(theReqdNumOfChunks - theFreeIdx.size());
         }
 
