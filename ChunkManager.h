@@ -17,6 +17,7 @@
 #include <chrono>
 #include <ctime>
 #include <sstream>
+#include <functional>
 
 const int kChunkSize = 1024;
 #pragma pack(push, 1)
