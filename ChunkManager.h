@@ -121,9 +121,14 @@ public:
         auto now = std::chrono::system_clock::now();
         std::time_t now_c = std::chrono::system_clock::to_time_t(now);
         std::tm* local_time = std::localtime(&now_c);
-        std::stringstream ss ;
-        ss << std::put_time(local_time, "%d-%m-%Y  %H:%M:%S");
-        return ss.str();
+
+        char buffer[20]; // Adjust the size as needed
+        std::strftime(buffer, sizeof(buffer), "%d-%m-%Y %H:%M:%S", local_time);
+
+        return std::string(buffer);
+//        std::stringstream ss ;
+//        ss << std::put_time(local_time, "%d-%m-%Y  %H:%M:%S");
+//        return ss.str();
     }
 
     bool each(ChunkCallback aCallback){
