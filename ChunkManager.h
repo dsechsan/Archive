@@ -124,7 +124,7 @@ public:
 
         char buffer[20]; // Adjust the size as needed
         std::strftime(buffer, sizeof(buffer), "%d-%m-%Y %H:%M:%S", local_time);
-
+        buffer[sizeof(buffer) - 1] = '\0';
         return std::string(buffer);
 //        std::stringstream ss ;
 //        ss << std::put_time(local_time, "%d-%m-%Y  %H:%M:%S");
@@ -156,13 +156,13 @@ public:
             each([&](Chunk& theChunk, size_t aPos) -> bool {
                 if (theChunk.header.fileName == aName && theChunk.header.partNum == 1) {
                     found = true;
-                    return false; // Return false to stop iterating once found
+                    return false;
                 }
-                return true; // Return true to continue iterating if not found
+                return true;
             });
             return found;
         } else {
-            return false; // Return false if there are no chunks
+            return false;
         }
     };
 
