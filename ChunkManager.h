@@ -266,7 +266,7 @@ public:
 
     void Compact(){
 
-        std::string tempfile = "/Users/dsechs/Library/CloudStorage/OneDrive-UCSanDiego/Desktop/ECE 141A/PA4/tmp/temp.arc";
+        std::string tempfile = "/tmp/temp.arc";
        std::fstream theTempFileStream(tempfile, std::ios::binary | std::ios::out | std::ios::in | std::ios::trunc);
        if(!theTempFileStream.is_open()) std::cerr << "Failed to open temporary file\n";
 
