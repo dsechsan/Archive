@@ -30,7 +30,7 @@ struct Header{
     size_t nextIdx;
     size_t fileSize;
     size_t dataSize;
-    std::string fileName;
+    char fileName[15];
     char timeInserted[20];
 };
 #pragma pack(pop)
@@ -154,7 +154,7 @@ public:
         bool found = false;
         if (numberOfChunks) {
             each([&](Chunk& theChunk, size_t aPos) -> bool {
-                if (theChunk.header.fileName == aName && theChunk.header.partNum == 1) {
+                if (std::strcmp(theChunk.header.fileName, aName.c_str()) == 0 && theChunk.header.partNum == 1) {
                     found = true;
                     return false;
                 }
@@ -170,7 +170,7 @@ public:
         std::map<size_t,size_t> theFileMap;
 
         each([&](Chunk& theChunk, size_t aPos){
-            if(theChunk.header.fileName == aName){
+            if(std::strcmp(theChunk.header.fileName, aName.c_str()) == 0){
                 theFileMap[theChunk.header.partNum] = aPos;
             }
             return true;
@@ -207,7 +207,7 @@ public:
             theStreamPos += theDataSize;
 
             std::strcpy(theChunk.header.timeInserted,getTimeInserted().c_str());
-            theChunk.header.fileName = aFileName;
+            std::strcpy(theChunk.header.fileName,aFileName.c_str());
             theChunk.header.occupied = true;
             theChunk.header.partNum = i + 1;
             theChunk.header.ChunkNum = theFreeIdx[i];
