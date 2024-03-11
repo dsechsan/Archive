@@ -196,7 +196,7 @@ public:
             archiveFileStream.seekp(kChunkSize*theFreeIdx[i],std::ios::beg);
 
             std::memset(&theChunk,0,sizeof(theChunk));
-            theDataSize = (theStreamPos + kAvailableSize > theFileSize) ? theFileSize - theStreamPos : kAvailableSize;
+            theDataSize = (theStreamPos + kChunkSize - sizeof(theChunk.header) > theFileSize) ? theFileSize - theStreamPos : kChunkSize - sizeof(theChunk.header);
             theInputStream.seekg(static_cast<int>(theStreamPos), std::ios::beg);
             theInputStream.read(theChunk.data, static_cast<long>(theDataSize));
             theStreamPos += theDataSize;
