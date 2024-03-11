@@ -67,7 +67,7 @@ namespace ECE141 {
         }
         std::ifstream theFileStream(theArchiveName, std::ios::binary | std::ios::in);
 
-        if(!std::filesystem::exists(theArchiveName)){
+        if(!theFileStream.is_open()){
             std::cerr << "File not found\n" ;
             return ArchiveStatus<std::shared_ptr<Archive>>(ArchiveErrors::fileNotFound);
         }
@@ -99,7 +99,7 @@ namespace ECE141 {
             return ArchiveStatus<bool>(ArchiveErrors::fileExists);
         }else{
             std::ifstream theFileStream(aFullPath, std::ios::binary | std::ios::in);
-            if(!std::filesystem::exists(aFullPath)){
+            if(!theFileStream.is_open()){
                 std::cerr << "File doesn't exist in memory\n" ;
                 return ArchiveStatus<bool>(ArchiveErrors::fileNotFound);
             }
@@ -134,6 +134,7 @@ namespace ECE141 {
         }
         else return ArchiveStatus<bool>(ArchiveErrors::badArchive);
         if(theStatus) return ArchiveStatus<bool>(true);
+        else return ArchiveStatus<bool>(false);
     }
 
     ArchiveStatus<size_t>  Archive::list(std::ostream &aStream){
