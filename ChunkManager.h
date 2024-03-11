@@ -98,8 +98,7 @@ public:
         if(aPos < numberOfChunks) {
             size_t theChunkPos = kChunkSize*aPos;
             archiveFileStream.seekg(static_cast<int>(theChunkPos),std::ios::beg);
-            archiveFileStream.read(reinterpret_cast<char *>(&theChunk.header), sizeof(Header));
-            archiveFileStream.read(theChunk.data, kAvailableSize);
+            archiveFileStream.read(reinterpret_cast<char *>(&theChunk), sizeof(theChunk));
             return true;
         }else{
             return false;
