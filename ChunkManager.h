@@ -32,6 +32,7 @@ struct Header{
     size_t dataSize;
     std::string fileName;
     std::string timeInserted;
+
 };
 #pragma pack(pop)
 
@@ -48,7 +49,7 @@ public:
     ChunkManager()= default;
     explicit ChunkManager(const std::string &FileName): archiveFileName(FileName),inputFileSize(0), inputFile("null"){
         archiveFileStream.open(FileName, std::ios::binary | std ::ios::out | std::ios::in);
-        archiveFileStream.seekp(0, std::ios::end);
+//        archiveFileStream.seekp(0, std::ios::end);
 //        archiveFileStream << "This is a test\n";
         if(!archiveFileStream.is_open()){
             std::cerr << "Unable to open the archive file\n";
@@ -341,7 +342,6 @@ public:
     }
 
 private:
-    std::vector<Chunk> theChunks;
     size_t numberOfChunks = 0;
     std::string archiveFileName;
     std::fstream archiveFileStream;
