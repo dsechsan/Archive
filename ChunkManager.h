@@ -143,14 +143,13 @@ public:
 //        else return 0;
 //    }
 
-    bool find(const std::string &aName, int* aFindIndex = nullptr ){
+    bool find(const std::string &aName){
         bool found = false;
+        int foundIndex{-1};
         if (numberOfChunks) {
             each([&](Chunk& theChunk, size_t aPos) -> bool {
                 if (theChunk.header.fileName == aName && theChunk.header.partNum == 1) {
-                    if (aFindIndex != nullptr) {
-                        *aFindIndex = static_cast<int>(theChunk.header.ChunkNum); // Cast ChunkNum to int
-                    }
+                    foundIndex = static_cast<int>(theChunk.header.ChunkNum); // Cast ChunkNum to in
                     found = true;
                     return false; // Return false to stop iterating once found
                 }

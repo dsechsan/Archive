@@ -94,7 +94,7 @@ namespace ECE141 {
          */
         auto theFileName = getFileName(aFullPath);
         int findIndex = 0;
-        if(chunkManager->find(theFileName,&findIndex)){
+        if(chunkManager->find(theFileName)){
             std::cerr << "File already exists in the archive\n";
             return ArchiveStatus<bool>(ArchiveErrors::fileExists);
         }else{
