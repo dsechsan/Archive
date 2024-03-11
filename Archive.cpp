@@ -132,6 +132,7 @@ namespace ECE141 {
         }
         else return ArchiveStatus<bool>(ArchiveErrors::badArchive);
         if(theStatus) return ArchiveStatus<bool>(true);
+        return ArchiveStatus<bool>(false);
     }
 
     ArchiveStatus<size_t>  Archive::list(std::ostream &aStream){
