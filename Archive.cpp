@@ -93,8 +93,8 @@ namespace ECE141 {
          * 3. write data to chunks
          */
         auto theFileName = getFileName(aFullPath);
-
-        if(chunkManager->find(theFileName)){
+        int findIndex = 0;
+        if(chunkManager->find(theFileName,&findIndex)){
             std::cerr << "File already exists in the archive\n";
             return ArchiveStatus<bool>(ArchiveErrors::fileExists);
         }else{
