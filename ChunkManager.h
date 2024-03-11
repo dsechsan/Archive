@@ -17,9 +17,6 @@
 #include <chrono>
 #include <ctime>
 #include <sstream>
-#include <functional>
-#include <iomanip>
-#include <cstring>
 
 const int kChunkSize = 1024;
 #pragma pack(push, 1)
@@ -32,15 +29,14 @@ struct Header{
     size_t dataSize;
     std::string fileName;
     std::string timeInserted;
-
 };
 #pragma pack(pop)
 
 const int kAvailableSize = kChunkSize -sizeof(Header);
 struct Chunk{
-    Chunk(): header{false,0,0,0,0,0, "null", "null"} {};
-    char data[kAvailableSize] = {};
     Header header;
+    char data[kAvailableSize] = {};
+    Chunk(): header{false,0,0,0,0,0, "null", "null"} {};
 };
 
 using ChunkCallback = std::function<bool(Chunk &,size_t)>;
@@ -48,8 +44,8 @@ class ChunkManager{
 public:
     ChunkManager()= default;
     explicit ChunkManager(const std::string &FileName): archiveFileName(FileName),inputFileSize(0), inputFile("null"){
-        archiveFileStream.open(FileName, std::ios::binary | std ::ios::out | std::ios::in);
-//        archiveFileStream.seekp(0, std::ios::end);
+        archiveFileStream.open(archiveFileName, std::ios::binary | std ::ios::out | std::ios::in);
+        archiveFileStream.seekp(0, std::ios::end);
 //        archiveFileStream << "This is a test\n";
         if(!archiveFileStream.is_open()){
             std::cerr << "Unable to open the archive file\n";
@@ -95,7 +91,7 @@ public:
     }
 
     bool getChunk(Chunk &theChunk , size_t aPos){
-        if(numberOfChunks!= 0 and aPos < numberOfChunks) {
+        if(aPos < numberOfChunks) {
             size_t theChunkPos = kChunkSize*aPos;
             archiveFileStream.seekg(static_cast<int>(theChunkPos),std::ios::beg);
             archiveFileStream.read(reinterpret_cast<char *>(&theChunk.header), sizeof(Header));
@@ -131,7 +127,6 @@ public:
         size_t thePos{0};
         bool theResult{true};
         Chunk theChunk;
-        std::memset(&theChunk, 0, sizeof(theChunk));
         while(theResult){
             theResult = getChunk(theChunk,thePos);
             if(theResult){
@@ -148,11 +143,9 @@ public:
 
     bool find(const std::string &aName){
         bool found = false;
-        int foundIndex{-1};
         if (numberOfChunks) {
             each([&](Chunk& theChunk, size_t aPos) -> bool {
                 if (theChunk.header.fileName == aName && theChunk.header.partNum == 1) {
-                    foundIndex = static_cast<int>(theChunk.header.ChunkNum); // Cast ChunkNum to in
                     found = true;
                     return false; // Return false to stop iterating once found
                 }
@@ -184,16 +177,10 @@ public:
         size_t theReqdNumOfChunks = getInputChunkCount();
         size_t theStreamPos{0};
         size_t theDataSize{0};
-        std::vector<int> theFreeIdx;
 
-        if(numberOfChunks!= 0) {
-            theFreeIdx = getFreeChunks();
-        }
+        auto theFreeIdx = getFreeChunks();
 
-        if(theFreeIdx.empty()){
-            addChunks(theReqdNumOfChunks);
-        }
-        else if(theFreeIdx.size() < theReqdNumOfChunks){
+        if(theFreeIdx.size() < theReqdNumOfChunks){
             addChunks(theReqdNumOfChunks - theFreeIdx.size());
         }
 
@@ -342,6 +329,7 @@ public:
     }
 
 private:
+    std::vector<Chunk> theChunks;
     size_t numberOfChunks = 0;
     std::string archiveFileName;
     std::fstream archiveFileStream;
