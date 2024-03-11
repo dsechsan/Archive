@@ -93,7 +93,7 @@ public:
     }
 
     bool getChunk(Chunk &theChunk , size_t aPos){
-        if(aPos < numberOfChunks) {
+        if(numberOfChunks!= 0 and aPos < numberOfChunks) {
             size_t theChunkPos = kChunkSize*aPos;
             archiveFileStream.seekg(static_cast<int>(theChunkPos),std::ios::beg);
             archiveFileStream.read(reinterpret_cast<char *>(&theChunk.header), sizeof(Header));
