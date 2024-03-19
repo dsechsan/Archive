@@ -2,8 +2,8 @@
 // Created by Sandeep Chintada on 3/7/24.
 //
 
-#ifndef ECE141_ARCHIVE_CHUNKMANAGER_H
-#define ECE141_ARCHIVE_CHUNKMANAGER_H
+#ifndef ECE141_ARCHIVE_CHUNKMANAGER_CPP
+#define ECE141_ARCHIVE_CHUNKMANAGER_CPP
 
 #include <cstdio>
 #include <iostream>
@@ -20,46 +20,13 @@
 #include <iomanip>
 #include <functional>
 #include <cstring>
+#include <zlib.h>
+#include "Archive.hpp"
 
-const int kChunkSize = 1024;
-#pragma pack(push, 1)
-struct Header{
-    bool occupied;
-    size_t ChunkNum;
-    size_t partNum;
-    size_t nextIdx;
-    size_t fileSize;
-    size_t dataSize;
-    char fileName[15];
-    char timeInserted[20];
-};
-#pragma pack(pop)
+namespace ECE141 {
 
-const int kAvailableSize = kChunkSize -sizeof(Header);
-struct Chunk{
-    Header header;
-    char data[kAvailableSize] = {};
-    Chunk(): header{false,0,0,0,0,0, "null", "null"} {};
-};
 
-using ChunkCallback = std::function<bool(Chunk &,size_t)>;
-class ChunkManager{
-public:
-    ChunkManager()= default;
-    explicit ChunkManager(const std::string &FileName): archiveFileName(FileName),inputFileSize(0), inputFile("null"){
-        archiveFileStream.open(archiveFileName, std::ios::binary | std ::ios::out | std::ios::in);
-        archiveFileStream.seekp(0, std::ios::end);
-//        archiveFileStream << "This is a test\n";
-        if(!archiveFileStream.is_open()){
-            std::cerr << "Unable to open the archive file\n";
-        }
-    }
-
-    ~ChunkManager(){
-        if(archiveFileStream.is_open()) archiveFileStream.close();
-    }
-
-    void addChunks(size_t numChunksToAdd){
+    void ChunkManager::addChunks(size_t numChunksToAdd){
         Chunk theChunk;
         for(int i = 0; i<numChunksToAdd; i++){
             std::memset(&theChunk,0,sizeof(theChunk));
@@ -72,14 +39,14 @@ public:
         }
     }
 
-    size_t getArchiveChunkCount(){
+    size_t ChunkManager::getArchiveChunkCount(){
         if(!archiveFileStream.is_open()) std::cerr << "unable to open archive stream to read\n";
         archiveFileStream.seekg(0,std::ios::end);
         numberOfChunks = archiveFileStream.tellg() / kChunkSize;
         return numberOfChunks;
     }
 
-    [[nodiscard]] size_t getInputFileSize() const{
+    [[nodiscard]] size_t ChunkManager::getInputFileSize() const{
         std::ifstream theInputStream(inputFile, std::ios::binary | std::ios::in);
         if (!theInputStream.is_open()) std::cerr << "unable to open file\n";
         theInputStream.seekg(0, std::ios::end);
@@ -89,12 +56,12 @@ public:
         return inputFileSize;
     }
 
-    [[nodiscard]] size_t getInputChunkCount() const{
+    [[nodiscard]] size_t ChunkManager::getInputChunkCount() const{
         auto theSize = getInputFileSize();
         return (theSize/kChunkSize) + (theSize % kChunkSize? 1: 0);
     }
 
-    bool getChunk(Chunk &theChunk , size_t aPos){
+    bool ChunkManager::getChunk(Chunk &theChunk , size_t aPos){
         if(aPos < numberOfChunks) {
             size_t theChunkPos = kChunkSize*aPos;
             archiveFileStream.seekg(static_cast<int>(theChunkPos),std::ios::beg);
@@ -105,7 +72,7 @@ public:
         }
     }
 
-    std::vector<int> getFreeChunks(){
+    std::vector<int> ChunkManager::getFreeChunks(){
         std::vector<int> theList;
         each([&](Chunk& theChunk, size_t aPos){
             if (!theChunk.header.occupied) {
@@ -117,21 +84,22 @@ public:
         return theList;
     }
 
-    static std::string getTimeInserted(){
+     int64_t ChunkManager::getTimeInserted(){
         auto now = std::chrono::system_clock::now();
-        std::time_t now_c = std::chrono::system_clock::to_time_t(now);
-        std::tm* local_time = std::localtime(&now_c);
+        auto now_secs = std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count();
+        int64_t now_secs_64 = static_cast<int64_t>(now_secs);
 
-        char buffer[20]; // Adjust the size as needed
-        std::strftime(buffer, sizeof(buffer), "%d-%m-%Y %H:%M:%S", local_time);
-        buffer[sizeof(buffer) - 1] = '\0';
-        return std::string(buffer);
-//        std::stringstream ss ;
-//        ss << std::put_time(local_time, "%d-%m-%Y  %H:%M:%S");
-//        return ss.str();
+        return now_secs_64;
+    }
+    std::string ChunkManager::unixTimeToDate(int64_t aUnixTime) {
+        auto t = static_cast<std::time_t>(aUnixTime);
+        std::tm *localTime = std::localtime(&t);
+        char buffer[80];
+        std::strftime(buffer, sizeof(buffer), "%d-%m-%Y %H:%M:%S", localTime);
+        return {buffer};
     }
 
-    bool each(ChunkCallback aCallback){
+    bool ChunkManager::each(ChunkCallback aCallback){
         size_t thePos{0};
         bool theResult{true};
         Chunk theChunk;
@@ -150,7 +118,7 @@ public:
 //        else return 0;
 //    }
 
-    bool find(const std::string &aName){
+    bool ChunkManager::find(const std::string &aName){
         bool found = false;
         if (numberOfChunks) {
             each([&](Chunk& theChunk, size_t aPos) -> bool {
@@ -166,7 +134,7 @@ public:
         }
     };
 
-    std::map<size_t, size_t> getChunksOfAFile(const std::string &aName){
+    std::map<size_t, size_t> ChunkManager::getChunksOfAFile(const std::string &aName){
         std::map<size_t,size_t> theFileMap;
 
         each([&](Chunk& theChunk, size_t aPos){
@@ -177,53 +145,75 @@ public:
         });
         return  theFileMap;
     };
-
-    // Chunkify a normal file
-    void writeChunksToArchive(const std::string& aFileName){
-        numberOfChunks = getArchiveChunkCount();
-
+    void ChunkManager::writeChunksToArchive(const std::string& aFileName, IDataProcessor* aProcessor) {
+        std::ifstream theInputStream(inputFile, std::ios::binary | std::ios::in);
         size_t theFileSize = getInputFileSize();
-        size_t theReqdNumOfChunks = getInputChunkCount();
-        size_t theStreamPos{0};
-        size_t theDataSize{0};
+        std::vector<uint8_t> fileData;
 
-        auto theFreeIdx = getFreeChunks();
+        bool isCompressed = false;
+        std::vector<uint8_t> theCompressedData;
 
-        if(theFreeIdx.size() < theReqdNumOfChunks){
-            addChunks(theReqdNumOfChunks - theFreeIdx.size());
+        if (aProcessor != nullptr) {
+            // Read the entire file into memory (consider streaming for large files)
+            fileData.resize(theFileSize);
+            theInputStream.read(reinterpret_cast<char*>(fileData.data()), theFileSize);
+
+            // Compress the file data
+            theCompressedData = aProcessor->process(fileData);
+            isCompressed = true;
+            theFileSize = theCompressedData.size(); // Update fileSize to reflect compressed size
         }
 
+        size_t theStreamPos = 0;
+        size_t theReqdNumOfChunks = theFileSize/kChunkSize + (theFileSize % kChunkSize? 1: 0); ; // Adjusted to use a function for clarity
+        auto theFreeIdx = getFreeChunks();
+
+        if (theFreeIdx.size() < theReqdNumOfChunks) {
+            addChunks(theReqdNumOfChunks - theFreeIdx.size());
+        }
         theFreeIdx = getFreeChunks();
 
-        Chunk theChunk;
-        std::ifstream theInputStream(inputFile,std::ios::binary | std::ios::in);
-        for(auto i = 0;i< theReqdNumOfChunks; i++) {
-            archiveFileStream.seekp(kChunkSize*theFreeIdx[i],std::ios::beg);
+        for (size_t i = 0; i < theReqdNumOfChunks; i++) {
+            archiveFileStream.seekp(kChunkSize * theFreeIdx[i], std::ios::beg);
 
-            std::memset(&theChunk,0,sizeof(theChunk));
-            theDataSize = (theStreamPos + kChunkSize - sizeof(theChunk.header) > theFileSize) ? theFileSize - theStreamPos : kChunkSize - sizeof(theChunk.header);
-            theInputStream.seekg(static_cast<int>(theStreamPos), std::ios::beg);
-            theInputStream.read(theChunk.data, static_cast<long>(theDataSize));
-            theStreamPos += theDataSize;
+            Chunk theChunk;
+            std::memset(&theChunk, 0, sizeof(theChunk));
 
-            std::strcpy(theChunk.header.timeInserted,getTimeInserted().c_str());
-            std::strcpy(theChunk.header.fileName,aFileName.c_str());
+            size_t chunkDataSize = (theStreamPos + kChunkSize - sizeof(theChunk.header) > theFileSize) ? theFileSize - theStreamPos : kChunkSize - sizeof(theChunk.header);
+
+            if (isCompressed) {
+                std::memcpy(theChunk.data, theCompressedData.data() + theStreamPos, chunkDataSize);
+            } else {
+                // If not compressed, read directly from the file
+                theInputStream.seekg(static_cast<int>(theStreamPos), std::ios::beg);
+                theInputStream.read(theChunk.data, static_cast<long>(chunkDataSize));
+            }
+
+            theStreamPos += chunkDataSize;
+
+            // Setup chunk header here
+            theChunk.header.timeInserted = getTimeInserted();
+            std::strcpy(theChunk.header.fileName, aFileName.c_str());
             theChunk.header.occupied = true;
             theChunk.header.partNum = i + 1;
             theChunk.header.ChunkNum = theFreeIdx[i];
-            theChunk.header.dataSize = theDataSize;
-            theChunk.header.fileSize = theFileSize;
+            theChunk.header.dataSize = chunkDataSize;
+            theChunk.header.fileSize = theFileSize; // This might reflect the compressed file size
+            theChunk.header.compressed = isCompressed;
             if (i != theReqdNumOfChunks - 1) {
                 theChunk.header.nextIdx = theFreeIdx[i + 1];
+            } else {
+                theChunk.header.nextIdx = 0;
             }
-            else theChunk.header.nextIdx = 0;
 
-            archiveFileStream.write(reinterpret_cast<const char*>(&theChunk),sizeof(theChunk));
-
+            // Write the chunk to the archive
+            archiveFileStream.write(reinterpret_cast<const char*>(&theChunk), sizeof(theChunk));
         }
     }
 
-    bool retrieve(const std::string &aName, const std::string &aFullPath){
+    bool ChunkManager::retrieve(const std::string &aName, const std::string &aFullPath){
+//        auto aProcessor = std::make_unique<IDataProcessor>();
+        std::unique_ptr<IDataProcessor> aProcessor = std::make_unique<Compression>();
         auto theFileMap = getChunksOfAFile(aName);
         if(theFileMap.empty()) return false;
 
@@ -233,11 +223,17 @@ public:
             std::memset(&theChunk,0,sizeof(theChunk));
 
             archiveFileStream.seekg(static_cast<int>((pair.second)*kChunkSize), std::ios::beg);
-            archiveFileStream.read(reinterpret_cast<char*>(&theChunk.header),sizeof(Header));
+            archiveFileStream.read(reinterpret_cast<char*>(&theChunk),sizeof(theChunk));
 
-            archiveFileStream.seekg(static_cast<int>((pair.second)*kChunkSize + sizeof(Header)), std::ios::beg);
-            archiveFileStream.read(reinterpret_cast<char*>(&theChunk.data),kAvailableSize);
-            theOutputFileStream.write(theChunk.data,static_cast<long>(theChunk.header.dataSize));
+
+            if(theChunk.header.compressed){
+                std::vector<uint8_t> theCompressedData(theChunk.data, theChunk.data + theChunk.header.dataSize);
+                std::vector<uint8_t> theUncompressedData = aProcessor->reverseProcess(theCompressedData);
+                theOutputFileStream.write(reinterpret_cast<const char*>(theUncompressedData.data()), static_cast<long>(theUncompressedData.size()));
+            } else {
+                theOutputFileStream.write(theChunk.data, static_cast<long>(theChunk.header.dataSize));
+            }
+
             if(theOutputFileStream.fail()){
                 std::cerr << "failed to write the file data\n";
                 return false;
@@ -246,7 +242,7 @@ public:
         return true;
     };
 
-    bool deleteChunksOfFile(const std::string &aName){
+    bool ChunkManager::deleteChunksOfFile(const std::string &aName){
         auto theFileMap = getChunksOfAFile(aName);
         if(theFileMap.empty()) return false;
 
@@ -264,8 +260,7 @@ public:
         return true;
     }
 
-    void Compact(){
-
+    void ChunkManager::Compact(){
         std::string tempfile = "/tmp/temp.arc";
        std::fstream theTempFileStream(tempfile, std::ios::binary | std::ios::out | std::ios::in | std::ios::trunc);
        if(!theTempFileStream.is_open()) std::cerr << "Failed to open temporary file\n";
@@ -306,7 +301,7 @@ public:
 
     }
 
-    void listFiles(std::ostream& anOutput, size_t* aNumFiles = nullptr){
+    void ChunkManager::listFiles(std::ostream& anOutput, size_t* aNumFiles){
         anOutput << std::left << std::setw(2) << "###" << " ";
         anOutput << std::setw(15) << "name" << " ";
         anOutput << std::setw(10) <<  "size" << " ";
@@ -319,13 +314,13 @@ public:
                 anOutput << std::left << std::setw(15) << aChunk.header.fileName << " ";
                 anOutput << std::setw(10) << aChunk.header.fileSize << " ";
                 // Assuming `timeInserted` is a string that fits in 20 characters
-                anOutput << std::right << std::setw(20) << aChunk.header.timeInserted << "\n";
+                anOutput << std::right << std::setw(20) << unixTimeToDate(aChunk.header.timeInserted) << "\n";
             }
             return true;
         });
     }
 
-    void dump(std::ostream& anOutput){
+    void ChunkManager::dump(std::ostream& anOutput){
         anOutput << "###    status       name\n";
         anOutput << "------------------------\n";
         each([&](Chunk& theChunk, size_t aPos){
@@ -336,18 +331,9 @@ public:
         });
     }
 
-    void setInputFileName(const std::string& anInputFile) {
+    void ChunkManager::setInputFileName(const std::string& anInputFile) {
         inputFile = anInputFile;
     }
-
-private:
-    std::vector<Chunk> theChunks;
-    size_t numberOfChunks = 0;
-    std::string archiveFileName;
-    std::fstream archiveFileStream;
-    std::string inputFile; // for the add operation
-    mutable size_t inputFileSize;
-    std::vector<size_t> emptyChunkIdx;
 };
 
-#endif //ECE141_ARCHIVE_CHUNKMANAGER_H
+#endif //ECE141_ARCHIVE_CHUNKMANAGER_CPP

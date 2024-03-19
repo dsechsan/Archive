@@ -8,6 +8,7 @@
 #include "Archive.hpp"
 #include <memory>
 #include <utility>
+#include <filesystem>
 
 namespace ECE141 {
 
@@ -20,7 +21,7 @@ namespace ECE141 {
             case ActionType::removed: std::cout << "remove "; break;
             case ActionType::listed: std::cout << "list "; break;
             case ActionType::dumped: std::cout << "dump "; break;
-            case ActionType::compacted: std::cout << "compact "; break;
+//            case ActionType::compacted: std::cout << "compact "; break;
         }
         std::cout << aName << "\n";
         std::cout << "File: " << aName << ", Status: " << (status ? "Success" : "Failure") << "\n";
@@ -39,35 +40,28 @@ namespace ECE141 {
     }
 
     ArchiveStatus<std::shared_ptr<Archive>> Archive::createArchive(const std::string &anArchiveName) {
-        std::string theArchiveName =anArchiveName;
-        if ((anArchiveName.rfind(".arc") != anArchiveName.length() - 4)) {
-            theArchiveName += ".arc";
+        std::string theArchiveName = anArchiveName;
+        anArchiveName.rfind(".arc") != anArchiveName.length() - 4 ? theArchiveName += ".arc" : theArchiveName = anArchiveName;
+
+        std::ofstream theArchiveStream(theArchiveName,std::ios::binary | std::ios::out | std::ios::trunc);
+        if(!std::filesystem::exists(theArchiveName)){
+            return ArchiveStatus<std::shared_ptr<Archive>>(ArchiveErrors::fileNotFound);
         }
 
-        std::ofstream theFileStream(theArchiveName, std::ios::binary | std::ios::out | std::ios::trunc);
-        if(!theFileStream.is_open()){
-            std::cerr << "error opening file\n" ;
-            return ArchiveStatus<std::shared_ptr<Archive>>(ArchiveErrors::fileOpenError);
-        }
-
+        theArchiveStream.close();
         auto theArchivePtr = std::shared_ptr<Archive>(new Archive(theArchiveName, AccessMode::AsNew));
         theArchivePtr->chunkManager = std::make_shared<ChunkManager>(theArchiveName);
-//        theArchivePtr->chunkManager->readChunksFromFile();
 
         return ArchiveStatus<std::shared_ptr<Archive>>(theArchivePtr);
-
   }
 
     ArchiveStatus<std::shared_ptr<Archive>> Archive::openArchive(const std::string &anArchiveName){
-        std::string theArchiveName = anArchiveName;
-        if (anArchiveName.length() > 4 && (anArchiveName.rfind(".arc") != anArchiveName.length() - 4)) {
-            theArchiveName += ".arc";
-        }
-        std::ifstream theFileStream(theArchiveName, std::ios::binary | std::ios::in);
+        std::string theArchiveName;
+        anArchiveName.rfind(".arc") != anArchiveName.length() - 4 ? theArchiveName = anArchiveName + ".arc" : theArchiveName = anArchiveName;
 
-        if(!theFileStream.is_open()){
-            std::cerr << "File not found\n" ;
-            return ArchiveStatus<std::shared_ptr<Archive>>(ArchiveErrors::fileNotFound);
+        if(!std::filesystem::exists(theArchiveName)){
+            std::cerr << "unable to open file\n";
+            return ArchiveStatus<std::shared_ptr<Archive>>(ArchiveErrors::badFilename);
         }
 
         auto theArchivePtr = std::shared_ptr<Archive>(new Archive(theArchiveName, AccessMode::AsExisting));
@@ -83,7 +77,7 @@ namespace ECE141 {
         return *this;
     }
 
-    ArchiveStatus<bool>   Archive::add(const std::string &aFullPath){
+    ArchiveStatus<bool>   Archive::add(const std::string &aFullPath, IDataProcessor* aProcessor){
         /* 1. get list of free chunks
          * 2. add chunks if necessary
          * 3. write data to chunks
@@ -94,14 +88,12 @@ namespace ECE141 {
             std::cerr << "File already exists in the archive\n";
             return ArchiveStatus<bool>(ArchiveErrors::fileExists);
         }else{
-            std::ifstream theFileStream(aFullPath, std::ios::binary | std::ios::in);
-            if(!theFileStream.is_open()){
+            if(!std::filesystem::exists(aFullPath)){
                 std::cerr << "File doesn't exist in memory\n" ;
-                return ArchiveStatus<bool>(ArchiveErrors::fileNotFound);
+                return ArchiveStatus<bool>(ArchiveErrors::badFilename);
             }
             chunkManager->setInputFileName(aFullPath);
-//            chunkManager->writeDataToChunks(theFileName);
-            chunkManager->writeChunksToArchive(theFileName);
+            chunkManager->writeChunksToArchive(theFileName, aProcessor);
 
             return ArchiveStatus<bool>(true);
         }
@@ -109,14 +101,11 @@ namespace ECE141 {
 
     ArchiveStatus<bool>   Archive::extract(const std::string &aFilename, const std::string &aFullPath) {
         bool theStatus{false};
-
-//        std::ofstream theFileStream(aFullPath, std::ios::binary | std::ios::out);
         if(chunkManager->find(aFilename) ){
             theStatus = chunkManager->retrieve(aFilename,aFullPath);
         }else{
             return ArchiveStatus<bool>(ArchiveErrors::badFilename);
         }
-//        theFileStream.close();
 
         if(theStatus) return ArchiveStatus<bool>(true);
         return ArchiveStatus<bool>(ArchiveErrors::fileWriteError);

@@ -39,6 +39,7 @@ int main(int argc, const char * argv[]) {
           {"List",    [&](){return theTester.doListTests(theOutput);}  },
           {"Dump",    [&](){return theTester.doDumpTests(theOutput);}  },
           {"Stress",  [&](){return theTester.doStressTests(theOutput);}  },
+          {"Compress",  [&](){return theTester.doCompressTests(theOutput);}  },
           {"All",     [&](){return theTester.doAllTests(theOutput);}  },
         };
         
