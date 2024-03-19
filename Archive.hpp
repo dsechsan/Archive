@@ -20,6 +20,7 @@
 #include <map>
 //#include "ChunkManager.cpp"
 #include <zlib.h>
+#include <functional>
 
 
 namespace ECE141 {
