@@ -12,6 +12,7 @@
 #include <string>
 #include <map>
 #include "Testing.hpp"
+#include "Archive.hpp"
 
 std::string getLocalFolder() {
   //return std::string("c:/xxx/yyy");
@@ -54,6 +55,16 @@ int main(int argc, const char * argv[]) {
         else std::cout << "Unknown test\n";        
         
     }
+    std::string createpath = getLocalFolder()+ "/testing";
+
+//    ECE141::ArchiveStatus<std::shared_ptr<ECE141::Archive>> theArchive = ECE141::Archive::createArchive(createpath);
+//    std::string theFilePath = getLocalFolder() + "/XlargeA.txt";
+//
+//    std::unique_ptr<ECE141::IDataProcessor> aProcessor = std::make_unique<ECE141::Compression>();
+//    theArchive.getValue()->add(theFilePath,aProcessor.get());
+//    theArchive.getValue()->debugDump(std::cout);
+//    std::string newfilePath = getLocalFolder() + "/ext.txt";
+//    theArchive.getValue()->extract("XlargeA.txt",newfilePath);
 
     return 0;
 }

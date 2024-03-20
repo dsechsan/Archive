@@ -151,7 +151,6 @@ namespace ECE141 {
             if (inflateInit(&zs) != Z_OK) {
                 std::cerr << "Failed to initialize zlib for decompression" << std::endl;
             }
-
             zs.next_in = reinterpret_cast<Bytef*>(const_cast<uint8_t*>(input.data()));
             zs.avail_in = input.size();
 
@@ -160,7 +159,7 @@ namespace ECE141 {
             std::vector<uint8_t> tempBuffer(MAX_BUFFER_SIZE);
 
             do {
-                zs.next_out = reinterpret_cast<Bytef*>(tempBuffer.data());
+                zs.next_out = reinterpret_cast<Bytef *>(tempBuffer.data());
                 zs.avail_out = tempBuffer.size();
 
                 inflateStatus = inflate(&zs, Z_NO_FLUSH);

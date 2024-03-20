@@ -58,7 +58,7 @@ namespace ECE141 {
 
     [[nodiscard]] size_t ChunkManager::getInputChunkCount() const{
         auto theSize = getInputFileSize();
-        return (theSize/kChunkSize) + (theSize % kChunkSize? 1: 0);
+        return (theSize/kAvailableSize) + (theSize % kAvailableSize? 1: 0);
     }
 
     bool ChunkManager::getChunk(Chunk &theChunk , size_t aPos){
@@ -162,10 +162,11 @@ namespace ECE141 {
             theCompressedData = aProcessor->process(fileData);
             isCompressed = true;
             theFileSize = theCompressedData.size(); // Update fileSize to reflect compressed size
+            std::cout << "filesize" << theFileSize << std::endl;
         }
 
         size_t theStreamPos = 0;
-        size_t theReqdNumOfChunks = theFileSize/kChunkSize + (theFileSize % kChunkSize? 1: 0); ; // Adjusted to use a function for clarity
+        size_t theReqdNumOfChunks = theFileSize/kAvailableSize + (theFileSize % kAvailableSize? 1: 0); ; // Adjusted to use a function for clarity
         auto theFreeIdx = getFreeChunks();
 
         if (theFreeIdx.size() < theReqdNumOfChunks) {
@@ -218,24 +219,35 @@ namespace ECE141 {
         if(theFileMap.empty()) return false;
 
         Chunk theChunk;
-        std::ofstream theOutputFileStream(aFullPath, std::ios::binary | std::ios::out);
+        std::vector<uint8_t> theCompressedData;
+        std::ofstream theOutputFileStream(aFullPath, std::ios::binary | std::ios::out | std::ios::trunc);
+
         for (const auto& pair : theFileMap){
             std::memset(&theChunk,0,sizeof(theChunk));
 
             archiveFileStream.seekg(static_cast<int>((pair.second)*kChunkSize), std::ios::beg);
             archiveFileStream.read(reinterpret_cast<char*>(&theChunk),sizeof(theChunk));
 
+            std::streamsize bytesRead = archiveFileStream.gcount();
 
             if(theChunk.header.compressed){
-                std::vector<uint8_t> theCompressedData(theChunk.data, theChunk.data + theChunk.header.dataSize);
-                std::vector<uint8_t> theUncompressedData = aProcessor->reverseProcess(theCompressedData);
-                theOutputFileStream.write(reinterpret_cast<const char*>(theUncompressedData.data()), static_cast<long>(theUncompressedData.size()));
+                theCompressedData.insert(theCompressedData.end(),theChunk.data, theChunk.data + std::min(theChunk.header.dataSize, static_cast<size_t>(bytesRead) - sizeof(theChunk.header)));
             } else {
                 theOutputFileStream.write(theChunk.data, static_cast<long>(theChunk.header.dataSize));
             }
+            theOutputFileStream.seekp(0,std::ios::end);
+        }
 
-            if(theOutputFileStream.fail()){
-                std::cerr << "failed to write the file data\n";
+        if(theOutputFileStream.fail()){
+            std::cerr << "failed to write the file data\n";
+            return false;
+        }
+
+        if (!theCompressedData.empty()) {
+            std::vector<uint8_t> theUncompressedData = aProcessor->reverseProcess(theCompressedData);
+            theOutputFileStream.write(reinterpret_cast<const char*>(theUncompressedData.data()), static_cast<std::streamsize>(theUncompressedData.size()));
+            if (theOutputFileStream.fail()) {
+                std::cerr << "Failed to write decompressed file data.\n";
                 return false;
             }
         }
@@ -326,7 +338,7 @@ namespace ECE141 {
         each([&](Chunk& theChunk, size_t aPos){
             std::string status = theChunk.header.occupied ? "used": "empty";
             std::string name = theChunk.header.occupied ? theChunk.header.fileName : "";
-            anOutput << (aPos + 1) << ".   " << status << "     " << name << "\n";
+            anOutput << (aPos + 1) << ".   " << status << "     " << name <<  "    " << theChunk.header.dataSize <<  "\n";
             return true;
         });
     }

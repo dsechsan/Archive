@@ -477,9 +477,12 @@ namespace ECE141 {
             const int theMin = 1000;
             size_t theSize = theMin + rand() % ((2001) - theMin);
             std::string theFullPath(folder + '/' + theName);
+//            std::cout << "Attempting to add file: " << theFullPath << " with size: " << theSize << std::endl;
             makeFile(theFullPath, theSize);
             anArchive.add(theFullPath);
-            return verifyStressList(anArchive);
+            bool result = verifyStressList(anArchive);
+//            std::cout << "Add operation " << (result ? "successful" : "failed") << " for file: " << theFullPath << std::endl;
+            return result;
         }
 
         //-------------------------------------------
@@ -488,9 +491,12 @@ namespace ECE141 {
             if (stressList.size()>1) {
                 size_t theIndex = rand() % stressList.size();
                 std::string theName = stressList[theIndex];
+//                std::cout << "Attempting to remove file: " << theName << std::endl;
                 stressList.erase(stressList.begin() + theIndex);
                 anArchive.remove(theName);
-                return verifyStressList(anArchive);
+                bool result = verifyStressList(anArchive);
+//                std::cout << "Remove operation " << (result ? "successful" : "failed") << " for file: " << theName << std::endl;
+                return result;
             }
             return true;
         }
@@ -502,8 +508,11 @@ namespace ECE141 {
                 std::string theOutFileName(folder + "/out.txt");
                 size_t theIndex = rand() % stressList.size();
                 std::string theName = stressList[theIndex];
+//                std::cout << "Attempting to extract file: " << theName << " to " << theOutFileName << std::endl;
                 anArchive.extract(theName, theOutFileName);
-                return filesMatch(theName, theOutFileName);
+                bool result = filesMatch(theName, theOutFileName);
+//                std::cout << "Extract operation " << (result ? "matched original" : "did not match original") << " for file: " << theName << std::endl;
+                return result;
             }
             return true;
         }
@@ -565,7 +574,7 @@ namespace ECE141 {
                 };
 
                 while (theResult && theOpCount--) {
-                    switch (theCalls[rand() % 3]) {
+                    switch (theCalls[rand()%3]) {
                         case ActionType::added:
                             theResult = stressAdd(*theArchive.getValue());
                             break;
