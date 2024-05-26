@@ -325,7 +325,6 @@ namespace ECE141 {
                 anOutput << std::right << std::setw(2) << ++(*aNumFiles) << ". ";
                 anOutput << std::left << std::setw(15) << aChunk.header.fileName << " ";
                 anOutput << std::setw(10) << aChunk.header.fileSize << " ";
-                // Assuming `timeInserted` is a string that fits in 20 characters
                 anOutput << std::right << std::setw(20) << unixTimeToDate(aChunk.header.timeInserted) << "\n";
             }
             return true;
